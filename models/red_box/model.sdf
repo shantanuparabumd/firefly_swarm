@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+  <model name="red_box">
+    <static>true</static> <!-- Set to true if the box doesn't move -->
+    <link name="link">
+      <collision name='collision'>
+        <geometry>
+          <box>
+            <size>1 1 1</size>
+          </box>
+        </geometry>
+        <pose>0 0 0 0 0 0</pose>
+      </collision>
+
+      <!-- Define the visual representation of the box -->
+      <visual name="visual">
+        <!-- Specify the geometry of the box -->
+        <geometry>
+          <box>
+            <size>1 1 1</size> <!-- Define the size of the box -->
+          </box>
+        </geometry>
+        <!-- Define the material properties to make the box red -->
+        <material>
+          <ambient>1 0 0 1</ambient> <!-- Red color (RGBA) -->
+          <diffuse>1 0 0 1</diffuse> <!-- Red color (RGBA) -->
+          <specular>0.1 0.1 0.1 1</specular> <!-- Specular color (RGBA) -->
+          <emissive>0 0 0 0</emissive> <!-- Emissive color (RGBA) -->
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

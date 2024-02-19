@@ -4,7 +4,7 @@ on:
   # Triggered whenever push to the master branch
   push:
     branches:
-      - main
+      - master
 
   # Triggered whenever a pull request is created on master
   pull_request:

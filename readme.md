@@ -2,8 +2,8 @@
 # Solution Search using Firefly Algorithm.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) 
-[![codecov](https://codecov.io/gh/shantanuparabumd/project_legion/graph/badge.svg?token=WS0I96DIDU)](https://codecov.io/gh/shantanuparabumd/project_legion)
-[![project_legion_build](https://github.com/shantanuparabumd/project_legion/actions/workflows/project_legion_git_ci.yml/badge.svg)](https://github.com/shantanuparabumd/project_legion/actions/workflows/project_legion_git_ci.yml)
+<!-- [![codecov](https://codecov.io/gh/shantanuparabumd/firefly_swarm/graph/badge.svg?token=WS0I96DIDU)](https://codecov.io/gh/shantanuparabumd/firefly_swarm) -->
+[![firefly_swarm_build](https://github.com/shantanuparabumd/firefly_swarm/actions/workflows/main.yml/badge.svg)](https://github.com/shantanuparabumd/firefly_swarm/actions/workflows/main.yml)
 
 ![Project Legion](/images/robotaxi.jpg)
 

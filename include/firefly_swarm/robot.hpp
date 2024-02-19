@@ -36,23 +36,25 @@
 #ifndef INCLUDE_FIREFLY_SWARM_ROBOT_HPP_
 #define INCLUDE_FIREFLY_SWARM_ROBOT_HPP_
 
-#include <geometry_msgs/msg/quaternion.hpp> // Included for Quaternion message
-#include <geometry_msgs/msg/twist.hpp> // Included for Twist message
-#include <nav_msgs/msg/odometry.hpp> // Included for Odometry message
-#include <rclcpp/rclcpp.hpp> // Include the ROS2 C++ library 
-#include <std_msgs/msg/bool.hpp> // Included for Bool message
-#include <string> // Included for string
-#include <utility> // Included for pair
-#include <sensor_msgs/msg/image.hpp> // Included for Image message
-#include <sensor_msgs/msg/laser_scan.hpp> // Included for LaserScan message
-#include "cv_bridge/cv_bridge.h" // Included for cv_bridge (OPENCV TO ROS)
-#include <opencv2/highgui.hpp> // Included for highgui  (OPENCV)
-#include <geometry_msgs/msg/transform_stamped.hpp> // Included for TransformStamped message
-#include "tf2/LinearMath/Matrix3x3.h" // Included for Matrix3x3
-#include "tf2/LinearMath/Quaternion.h" // Included for Quaternion
-#include "tf2/exceptions.h" // Included for tf2 exceptions
-#include "tf2_ros/buffer.h" // Included for buffer
-#include "tf2_ros/transform_listener.h" //  Included for transform listener
+
+#include <string>  // Included for string
+#include <utility>  // Included for pair
+#include <vector>  // Included for vector
+#include <geometry_msgs/msg/quaternion.hpp>  // Included for Quaternion message
+#include <geometry_msgs/msg/twist.hpp>  // Included for Twist message
+#include <nav_msgs/msg/odometry.hpp>  // Included for Odometry message
+#include <rclcpp/rclcpp.hpp>  // Include the ROS2 C++ library
+#include <std_msgs/msg/bool.hpp>  // Included for Bool message
+#include <sensor_msgs/msg/image.hpp>  // Included for Image message
+#include <sensor_msgs/msg/laser_scan.hpp>   // Included for LaserScan message
+#include "cv_bridge/cv_bridge.h"  // Included for cv_bridge (OPENCV TO ROS)
+#include <opencv2/highgui.hpp>  // Included for highgui  (OPENCV)
+#include <geometry_msgs/msg/transform_stamped.hpp>  // Included for TransformStamped message
+#include "tf2/LinearMath/Matrix3x3.h"  // Included for Matrix3x3
+#include "tf2/LinearMath/Quaternion.h"  // Included for Quaternion
+#include "tf2/exceptions.h"  // Included for tf2 exceptions
+#include "tf2_ros/buffer.h"  // Included for buffer
+#include "tf2_ros/transform_listener.h"  //  Included for transform listener
 
 
 /**
@@ -81,17 +83,17 @@ class Robot : public rclcpp::Node {
      * @param mloc_x 
      * @param mloc_y 
      */
-    Robot(std::string node_name, std::string robot_name,double mloc_x,double mloc_y );
-    
-  /**
-   * @brief Set the goal to reach.
-   *
-   * @param go_to_goal Flag used to perform a transform listener
-   * @param x x-coordinate of the goal position.
-   * @param y y-coordinate of the goal position.
-   */
+    Robot(std::string node_name, std::string robot_name, double mloc_x, double mloc_y);
+
+    /**
+    * @brief Set the goal to reach.
+    *
+    * @param go_to_goal Flag used to perform a transform listener
+    * @param x x-coordinate of the goal position.
+    * @param y y-coordinate of the goal position.
+    */
     void set_goal(double x, double y);
-  
+
    /**
     * @brief Stop command
     * 
@@ -107,15 +109,15 @@ class Robot : public rclcpp::Node {
     * The robot keeps on turning until it finds a clear path to move towards the goal.
     */
     void obstacle_avoid();
-    
+
    /**
     * @brief Method to resume the robot to move towards the goal
     * 
     * The robot resumes to move towards the goal by setting the go_to_goal flag to true
     */
     void resume();
-  
-  
+
+
   /**
     * @brief Computes the Euclidian Distance
     * 
@@ -234,7 +236,7 @@ class Robot : public rclcpp::Node {
     * @return bool  
     */
 
-    bool check_obstacle(int range,int center,double distance);
+    bool check_obstacle(int range, int center, double distance);
 
    /**
     * @brief Method to indiacte that the robot has found the solution
@@ -267,25 +269,25 @@ class Robot : public rclcpp::Node {
 
     // Flags
 
-    bool object_detected = false; ///< Flag to indicate if the object is detected
+    bool object_detected = false;  ///< Flag to indicate if the object is detected
 
-    bool reached_object = false; ///< Flag to indicate if the robot has reached the object
+    bool reached_object = false;  ///< Flag to indicate if the robot has reached the object
 
-    bool reroute = false; ///< Flag to indicate if the robot has to reroute
+    bool reroute = false;  ///< Flag to indicate if the robot has to reroute
 
-    
 
-    geometry_msgs::msg::Quaternion m_orientation; ///< Orientation of the robot
 
-    std::pair<double, double> m_location; ///< Location of the robot
+    geometry_msgs::msg::Quaternion m_orientation;  ///< Orientation of the robot
 
-    std::pair<double, double> objective_location; ///< Location of the object
+    std::pair<double, double> m_location;  ///< Location of the robot
+
+    std::pair<double, double> objective_location;  ///< Location of the object
 
  private:
   // attributes
   std::string m_robot_name;  //< robot name used for creating namespace
   bool m_go_to_goal;         //< flag to store if the robot has reached position
-  
+
   double m_linear_speed;     //< base linear velocity of robot
   double m_angular_speed;    //< base angular velocity of robot
   double m_roll;             //< rad
@@ -293,37 +295,40 @@ class Robot : public rclcpp::Node {
   double m_yaw;              //< rad
   double m_kv;               //< gain for linear velocity
   double m_kh;               //< gain for angular velocity
-  double m_goal_x;           //< x-coordinate of the goal position    
+  double m_goal_x;           //< x-coordinate of the goal position
   double m_goal_y;           //< y-coordinate of the goal position
-  double m_distance_to_goal; //< distance to goal
+  double m_distance_to_goal;  //< distance to goal
   double m_intensity;        //< intensity of the firefly
-  std::vector<float> m_ranges_; //< range data from LiDAR
-  sensor_msgs::msg::Image m_processed_image_msg; //< processed image message
-
-  
-  int reroute_count = 0; //< reroute count
+  std::vector<float> m_ranges_;  //< range data from LiDAR
+  sensor_msgs::msg::Image m_processed_image_msg;  //< processed image message
 
 
-  rclcpp::CallbackGroup::SharedPtr m_cbg; 
-
-  rclcpp::TimerBase::SharedPtr m_timer; ///< Timer to trigger publishing.
-
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr m_publisher_cmd_vel; ///< The publisher object for velocity.
-
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr m_goal_reached_publisher;   ///< The publisher object for goal status.
-
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr m_subscriber_robot3_pose; ///< The subscriber object for robot pose.
-  
-  rclcpp::TimerBase::SharedPtr m_go_to_goal_timer; ///< Timer to trigger go to goal callback.
-
-  rclcpp::TimerBase::SharedPtr m_image_timer; ///< Timer to trigger image publishing callback.
-
-  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr m_camera_subscriber_; ///< The subscriber object for camera data.
-
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr m_scan_subscriber_; ///< The subscriber object for LiDAR data.
-
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_image_publisher; ///< The publisher object for processed image.
+  int reroute_count = 0;  //< reroute count
 
 
+  rclcpp::CallbackGroup::SharedPtr m_cbg;
+
+  rclcpp::TimerBase::SharedPtr m_timer;  ///< Timer to trigger publishing.
+
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr m_publisher_cmd_vel;  ///< The publisher object for velocity.
+
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr
+    m_goal_reached_publisher;   ///< The publisher object for goal status.
+
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr
+     m_subscriber_robot3_pose;  ///< The subscriber object for robot pose.
+
+  rclcpp::TimerBase::SharedPtr m_go_to_goal_timer;  ///< Timer to trigger go to goal callback.
+
+  rclcpp::TimerBase::SharedPtr m_image_timer;  ///< Timer to trigger image publishing callback.
+
+  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr
+     m_camera_subscriber_;  ///< The subscriber object for camera data.
+
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr
+     m_scan_subscriber_;  ///< The subscriber object for LiDAR data.
+
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr
+     m_image_publisher;  ///< The publisher object for processed image.
 };
 #endif  // INCLUDE_FIREFLY_SWARM_ROBOT_HPP_

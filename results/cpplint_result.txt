@@ -1,0 +1,7 @@
+Done processing ./include/firefly_swarm/master.hpp
+Done processing ./include/firefly_swarm/robot.hpp
+Done processing ./src/main.cpp
+Done processing ./src/master.cpp
+Done processing ./src/robot.cpp
+Done processing ./test/test.cpp
+Total errors found: 83

@@ -35,14 +35,15 @@
 #ifndef INCLUDE_FIREFLY_SWARM_MASTER_HPP_
 #define INCLUDE_FIREFLY_SWARM_MASTER_HPP_
 
-#include <memory> // Included for shared_ptr
-#include <vector> // Included for vector
+#include <memory>  // Included for shared_ptr
+#include <vector>  // Included for vector
 
-#include <nav_msgs/msg/odometry.hpp> // Included for Odometry message
-#include "firefly_swarm/robot.hpp" // Included for Robot class
 
-using TWIST = geometry_msgs::msg::Twist; // Alias for Twist message
-using ODOM = nav_msgs::msg::Odometry; // Alias for Odometry message
+#include <nav_msgs/msg/odometry.hpp>  // Included for Odometry message
+#include "firefly_swarm/robot.hpp"  // Included for Robot class
+
+using TWIST = geometry_msgs::msg::Twist;  // Alias for Twist message
+using ODOM = nav_msgs::msg::Odometry;  // Alias for Odometry message
 
 
 
@@ -56,7 +57,6 @@ using ODOM = nav_msgs::msg::Odometry; // Alias for Odometry message
  * algorithm to control the swarm.
  */
 class Master : public rclcpp::Node {
-
  public:
     /**
     * @brief Construct a new Master:: Master object
@@ -101,7 +101,7 @@ class Master : public rclcpp::Node {
     * @param j 
     */
     void firefly_inner(int j);
-    
+
     /**
     * @brief Check if all robots have reached the goal
     * 
@@ -111,7 +111,7 @@ class Master : public rclcpp::Node {
     * @return false 
     */
     bool check_all_robots_reached_goal();
-    
+
     /**
     * @brief Test function to move the robots in a circle
     * 
@@ -122,20 +122,18 @@ class Master : public rclcpp::Node {
     */
     void circle(double radius);
 
-private:
+ private:
   rclcpp::TimerBase::SharedPtr timer_;  ///< Timer to trigger publishing.
 
   rclcpp::Publisher<TWIST>::SharedPtr  publisher_;  ///< The publisher object.
 
-  std::vector<std::shared_ptr<Robot>> robot_array; ///< Array of robot objects.
+  std::vector<std::shared_ptr<Robot>> robot_array;  ///< Array of robot objects.
 
-  int nodes; ///< Number of robots in the swarm.
-  int generations = 0; ///< Number of generations.
-  double radius = 5.0; ///< Radius of the circle.
+  int nodes;  ///< Number of robots in the swarm.
+  int generations = 0;  ///< Number of generations.
+  double radius = 5.0;  ///< Radius of the circle.
 
-  int robot = 0; ///< Index of the robot.
-
-
+  int robot = 0;  ///< Index of the robot.
 };
 
 #endif  // INCLUDE_FIREFLY_SWARM_MASTER_HPP_

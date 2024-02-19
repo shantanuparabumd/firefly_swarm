@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < nodes; i++) {
     auto r_namespace = "firefly_" + std::to_string(i);
     auto nodename = "firefly_" + std::to_string(i) + "_controller";
-    auto robot = std::make_shared<Robot>(nodename, r_namespace,i-nodes/2,0.0);
+    auto robot = std::make_shared<Robot>(nodename, r_namespace, i-nodes/2, 0.0);
     exec.add_node(robot);
     robot_array.push_back(robot);
   }

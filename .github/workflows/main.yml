@@ -8,7 +8,7 @@ on:
 
   # Triggered whenever a pull request is created on master
   pull_request:
-    branches: ["main"]
+    branches: ["master"]
     types: [opened]
 
 

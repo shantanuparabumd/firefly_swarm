@@ -32,57 +32,24 @@
  * @copyright Copyright (c) 2024
  *
  */
-#include "firefly_swarm/robot.hpp"
+#include "firefly_swarm/robot.hpp" ///< Include the robot header file
 
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <rclcpp/rclcpp.hpp>
 
-#include "tf2/LinearMath/Matrix3x3.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2/exceptions.h"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/transform_listener.h"
 
-/**
- * @brief Pose Callback method
- * 
- * Stores the current location and orientation of the robot
- * in the global posiion variable of the robot
- * @param msg 
- */
+//=====================================
 void Robot::robot_pose_callback(const nav_msgs::msg::Odometry &msg) {
   m_location.first = msg.pose.pose.position.x;
   m_location.second = msg.pose.pose.position.y;
   m_orientation = msg.pose.pose.orientation;
 }
 
-
-
-
-
-
-
-/**
- * @brief Computes the Euclidian Distance
- * 
- * Given a pair of points, computes the distance between them
- * @param a 
- * @param b 
- * @return double 
- */
+//=====================================
 double Robot::compute_distance(const std::pair<double, double> &a,
                                const std::pair<double, double> &b) {
   return sqrt(pow(b.first - a.first, 2) + pow(b.second - a.second, 2));
 }
 
-/**
- * @brief Evaluates the Yaw from Quaternion
- * 
- * Converts the quaternion to RPY and returns the yaw
- * The yaw is converted to the range [0, 2*PI]
- *
- * @return double 
- */
+//=====================================
 double Robot::compute_yaw_from_quaternion() {
 
   // Create a quaternion from the orientation
@@ -104,14 +71,7 @@ double Robot::compute_yaw_from_quaternion() {
   return yaw;
 }
 
-
-/**
- * @brief Sends command to move to each robots
- * 
- * Publsihes the velocity command to the robot on the topic "cmd_vel"
- * @param linear 
- * @param angular 
- */
+//=====================================
 void Robot::move(double linear, double angular) {
   geometry_msgs::msg::Twist msg;
   msg.linear.x = linear;
@@ -119,12 +79,7 @@ void Robot::move(double linear, double angular) {
   m_publisher_cmd_vel->publish(msg);
 }
 
-/**
- * @brief Stop command
- * 
- * Stops the robot by sending a zero velocity command
- * Also makes the go_to_goal flag false
- */
+//=====================================
 void Robot::stop() {
 
   // Make the go_to_goal flag false
@@ -143,16 +98,7 @@ void Robot::stop() {
 
 }
 
-
-
-
-/**
- * @brief Send robot to the alloted location
- * 
- * While the robot is not at the goal, it computes the distance and angle to the goal
- * and moves the robot towards the goal using proportional control
- * If the robot is within 0.75m of the goal, it stops the robot
- */
+//=====================================
 void Robot::go_to_goal_callback() {
 
   // If the robot has reached the goal, stop the robot i.e return from the function
@@ -222,40 +168,17 @@ void Robot::go_to_goal_callback() {
   }
 }
 
-
-/**
- * @brief Publishes the image message
- * 
- * Publishes the processed image message to the topic "processed_image".
- * This is used to display the processed image in the GUI
- */
-
+//=====================================
 void Robot::image_pub_callback() {
   m_image_publisher->publish(m_processed_image_msg);
 }
 
-/**
- * @brief Getter for intensity
- * 
- * Returns the intensity of the robot limited to 1.0
- * @return double 
- */
+//=====================================
 double Robot::get_intensity(){
   return std::min(m_intensity,1.0);
 }
 
-
-
-
-/**
- * @brief Read the camera data from the robot and process it
- * 
- * The robot reads the camera data and processes it to detect the red color box
- * It computes the angle and depth of the centroid of the box and the intensity of the box
- * It also computes the x and y coordinates of the box and stores it in the objective_location variable
- * 
- * @param msg 
- */
+//=====================================
 void Robot::robot_camera_callback(const sensor_msgs::msg::Image &msg) {
 
   // Convert the ROS image message to an OpenCV image
@@ -331,7 +254,7 @@ void Robot::robot_camera_callback(const sensor_msgs::msg::Image &msg) {
     cv::putText(cv_ptr->image, "Object Detected", cv::Point(10, 150), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 2);
 
     // Compute the angle and depth of the centroid
-    angle = compute_angle(centroid.x, centroid.y);
+    angle = compute_angle(centroid.x);
     depth = compute_depth(1, angle);
 
     // Check if the depth is between 0.1 and 3.5
@@ -374,28 +297,15 @@ void Robot::robot_camera_callback(const sensor_msgs::msg::Image &msg) {
   // Store the pointer to the processed image message to be publsihed later
   m_processed_image_msg = *processed_image_msg_ptr;
 
-  
-
 }
 
-
-/**
- * @brief Compute the angle between the x axis of robot and the centroid of the object
- * 
- * Using the camera field of view and the image dimensions, the angle of the object 
- * from the center of the image is computed.
- *
- * @param angle Angle to normalize (rad)
- * @return double Normalized angle (rad)
- */
-
-double Robot::compute_angle(double x,double y){
+//=====================================
+double Robot::compute_angle(double x){
     // Camera field of view (FOV) in degrees
     double fov_degrees = 80.0;
 
     // Image dimensions (assuming square image)
     int image_width = 800;
-    int image_height = 800;
 
     // Calculate the angle per pixel
     double angle_per_pixel = fov_degrees / image_width;
@@ -410,17 +320,7 @@ double Robot::compute_angle(double x,double y){
     return angle_from_center;
 }
 
-
-/**
- * @brief Compute the distance to the object
- * 
- * Using the angle to the centroid of object and the LiDAR data,
- * the depth of the object is computed.
- *
- * @param range Range of angles to consider
- * @param angle Angle to normalize (degrees)
- * @return double Distance (meters)
- */
+//=====================================
 double Robot::compute_depth(int range,double angle){
 
   // Convert the angle to integer
@@ -436,12 +336,12 @@ double Robot::compute_depth(int range,double angle){
 
   // Iterate through the range of angles and compute the sum and count
   for (int i = low; i <= high; ++i) {
-    if (i >= 0 && i < m_ranges_.size()) {
+    if (i >= 0 && i < static_cast<int>(m_ranges_.size())) {
         sum += m_ranges_[i];
         count += 1; 
     }
     if (i < 0) {
-        sum = m_ranges_[m_ranges_.size() + i];
+        sum = m_ranges_[static_cast<int>(m_ranges_.size()) + i];
         count += 1;
       
     }
@@ -452,16 +352,7 @@ double Robot::compute_depth(int range,double angle){
 }
 
 
-
-/**
- * @brief The robot checks for obstacles in the LiDAR scan in a particular direction
- * 
- * @param range 360 degree range scan from the LiDAR
- * @param center Center point for the direction in the LiDAR scan
- * @param distance Threshold distance to check for obstacle
- * 
- * @return bool  
- */
+//=====================================
 bool Robot::check_obstacle(int range,int center,double distance){
 
   // Flag to store if the obstacle is detected
@@ -474,7 +365,8 @@ bool Robot::check_obstacle(int range,int center,double distance){
   // Iterate through the range of angles and check for obstacles
   for (int i = low; i <= high; ++i) {
     // For positive angles
-    if (i >= 0 && i < m_ranges_.size()) {
+    
+    if (i >= 0 && i < static_cast<int>(m_ranges_.size()) ) {
       // Check if the distance is less than the threshold
       if (m_ranges_[i] < distance) {
         // If the distance is less than the threshold, 
@@ -486,7 +378,7 @@ bool Robot::check_obstacle(int range,int center,double distance){
     // For negative angles convert the negative index to positive index
     if (i < 0) {
       // Check if the distance is less than the threshold
-      if (m_ranges_[m_ranges_.size() + i] < distance) {
+      if (m_ranges_[static_cast<int>(m_ranges_.size()) + i] < distance) {
         // If the distance is less than the threshold, 
         // set the obstacle_detected flag to true and break
         obstacle_detected = true;
@@ -497,16 +389,7 @@ bool Robot::check_obstacle(int range,int center,double distance){
   return obstacle_detected;
 }
 
-
-
-/**
- * @brief Callback method for the LiDAR scan.
- * 
- * The robot checks for obstacles in the LiDAR scan and if an obstacle is detected,
- * takes the necessary action to avoid the obstacle.
- *
- * @param msg 
- */
+//=====================================
 void Robot::robot_scan_callback(const sensor_msgs::msg::LaserScan &msg)
 {
   // Get the ranges from the LaserScan message
@@ -525,13 +408,7 @@ void Robot::robot_scan_callback(const sensor_msgs::msg::LaserScan &msg)
 
 }
 
-
-/**
- * @brief Method to avoid the obstacle
- * 
- * The robot avoids the obstacle by turning away from the obstacle and then moving away from it.
- * The robot keeps on turning until it finds a clear path to move towards the goal.
- */
+//=====================================
 void Robot::obstacle_avoid() {
 
   // Make the go_to_goal flag false. Stop the robot from moving towards the goal
@@ -566,12 +443,7 @@ void Robot::obstacle_avoid() {
   }
 }
 
-
-/**
- * @brief Method to resume the robot to move towards the goal
- * 
- * The robot resumes to move towards the goal by setting the go_to_goal flag to true
- */
+//=====================================
 void Robot::resume() {
   // Set the go_to_goal flag to true
   m_go_to_goal = true;
@@ -582,12 +454,7 @@ void Robot::resume() {
 
 }
 
-/**
- * @brief Method to indiacte that the robot has found the solution
- * 
- * The robot completes the task by stopping the robot and setting the go_to_goal flag to false
- * the robot also starts rotating to indicate that it has found the solution visually.
- */
+//=====================================
 void Robot::complete() {
   // Create a Twist message to publish the velocity command
   geometry_msgs::msg::Twist msg;
@@ -602,3 +469,99 @@ void Robot::complete() {
   m_publisher_cmd_vel->publish(msg);
   
 }
+
+//=====================================
+void Robot::set_intensity(double intensity){
+        m_intensity = intensity;
+    }
+
+//=====================================
+bool Robot::if_reached_goal() { return !m_go_to_goal; }
+
+//=====================================
+std::string Robot::get_robot_name() { return m_robot_name; }
+
+//=====================================
+void Robot::set_goal(double x, double y) {
+        m_go_to_goal = true;
+        m_goal_x = x;
+        m_goal_y = y;     
+    }
+
+//=====================================
+Robot::Robot(std::string node_name, std::string robot_name,double mloc_x,double mloc_y)
+      : Node(node_name),
+        m_robot_name{robot_name},  /// Initialize the robot name
+        m_location{std::make_pair(mloc_x,mloc_y)}, /// Initialize the robot location
+        m_go_to_goal{false}, /// Initialize the go_to_goal flag
+        m_linear_speed{0.4}, /// Initialize the linear speed
+        m_angular_speed{0.5}, /// Initialize the angular speed
+        m_roll{0}, // Initialize the roll
+        m_pitch{0}, // Initialize the pitch
+        m_yaw{0}, // Initialize the yaw
+        m_kv{0.2}, // Initialize the kv linear gain
+        m_kh{0.5},  // Initialize the kh angular gain
+        m_goal_x{0.0}, // Initialize the goal x
+        m_goal_y{0.0}   // Initialize the goal y
+        {
+    
+    m_cbg = this->create_callback_group(
+        rclcpp::CallbackGroupType::MutuallyExclusive);
+
+    auto command_topic_name = "/" + m_robot_name + "/cmd_vel";  ///< Create the command topic name
+    auto pose_topic_name = "/" + m_robot_name + "/odom"; ///< Create the pose topic name
+    auto camera_topic_name = "/" + m_robot_name + "/camera_sensor/image_raw"; ///< Create the camera topic name
+    auto scan_topic_name = "/" + m_robot_name + "/scan"; ///< Create the scan topic name
+    auto image_topic_name = "/" + m_robot_name + "/processed_image"; ///< Create the image topic name
+    auto goal_flag_topic_name = "/" + m_robot_name + "/goal_reached"; ///< Create the goal flag topic name
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Robot Constructor"); ///< Print the robot constructor message
+
+    // Create a publisher for the velocity command
+    m_publisher_cmd_vel = this->create_publisher<geometry_msgs::msg::Twist>(
+        command_topic_name, 10);
+
+    // Create a publisher for the goal reached message
+    m_goal_reached_publisher =
+        this->create_publisher<std_msgs::msg::Bool>(goal_flag_topic_name, 10);
+
+    // Create a publisher for the processed image
+    m_image_publisher =
+        this->create_publisher<sensor_msgs::msg::Image>(image_topic_name, 10);
+
+    // Create a subscriber for the robot pose
+    m_subscriber_robot3_pose =
+        this->create_subscription<nav_msgs::msg::Odometry>(
+            pose_topic_name, 10,
+            std::bind(&Robot::robot_pose_callback, this,
+                      std::placeholders::_1));
+
+
+    // Set QoS profile
+    rclcpp::QoS qos_profile(10);
+    qos_profile.history(rclcpp::HistoryPolicy::KeepLast);
+    qos_profile.keep_last(10);
+    qos_profile.reliability(rclcpp::ReliabilityPolicy::BestEffort);
+    qos_profile.durability(rclcpp::DurabilityPolicy::SystemDefault);
+
+    // Create a subscriber for the laser scan messages
+    m_scan_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+            scan_topic_name, qos_profile,
+            std::bind(&Robot::robot_scan_callback, this, std::placeholders::_1));
+
+    // Create a subscriber for camera messages
+    m_camera_subscriber_ = this->create_subscription<sensor_msgs::msg::Image>(
+                camera_topic_name, qos_profile,
+                std::bind(&Robot::robot_camera_callback, this, std::placeholders::_1));
+
+    // Call on_timer function 5 times per second
+    m_go_to_goal_timer = this->create_wall_timer(
+        std::chrono::milliseconds(static_cast<int>(1000.0 / 1)),
+        std::bind(&Robot::go_to_goal_callback, this), m_cbg);
+
+    // Call on_timer function 5 times per second
+    m_image_timer = this->create_wall_timer(
+        std::chrono::milliseconds(static_cast<int>(1000.0 / 1)),
+        std::bind(&Robot::image_pub_callback, this), m_cbg);
+
+  }

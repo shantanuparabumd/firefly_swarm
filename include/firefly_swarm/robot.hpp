@@ -47,7 +47,12 @@
 #include <sensor_msgs/msg/laser_scan.hpp> // Included for LaserScan message
 #include "cv_bridge/cv_bridge.h" // Included for cv_bridge (OPENCV TO ROS)
 #include <opencv2/highgui.hpp> // Included for highgui  (OPENCV)
-
+#include <geometry_msgs/msg/transform_stamped.hpp> // Included for TransformStamped message
+#include "tf2/LinearMath/Matrix3x3.h" // Included for Matrix3x3
+#include "tf2/LinearMath/Quaternion.h" // Included for Quaternion
+#include "tf2/exceptions.h" // Included for tf2 exceptions
+#include "tf2_ros/buffer.h" // Included for buffer
+#include "tf2_ros/transform_listener.h" //  Included for transform listener
 
 
 /**
@@ -62,83 +67,25 @@
  */
 class Robot : public rclcpp::Node {
  public:
-  Robot(std::string node_name, std::string robot_name,double mloc_x,double mloc_y ,bool go_to_goal = false,
-        double linear_speed = 0.4, double angular_speed = 0.5)
-      : Node(node_name),
-        m_robot_name{robot_name},
-        m_location{std::make_pair(mloc_x,mloc_y)},
-        m_go_to_goal{go_to_goal},
-        m_linear_speed{linear_speed},
-        m_angular_speed{angular_speed},
-        m_roll{0},
-        m_pitch{0},
-        m_yaw{0},
-        m_kv{0.2},
-        m_kh{0.5},
-        m_goal_x{0.0},
-        m_goal_y{0.0}
-        {
+    /**
+     * @brief Construct a new Robot object
+     * 
+     * The constructor initializes the robot node with the robot name and the goal location.
+     * It creates a timer to call the go_to_goal_callback function every 100ms
+     * It also creates a timer to call the image_pub_callback function every 100ms
+     * The go_to_goal_callback function checks if the robot has reached the goal and then moves the robot towards the goal
+     * The image_pub_callback function publishes the processed image to the "processed_image" topic
+     * 
+     * @param node_name 
+     * @param robot_name 
+     * @param mloc_x 
+     * @param mloc_y 
+     * @param go_to_goal 
+     * @param linear_speed 
+     * @param angular_speed 
+     */
+    Robot(std::string node_name, std::string robot_name,double mloc_x,double mloc_y );
     
-    m_cbg = this->create_callback_group(
-        rclcpp::CallbackGroupType::MutuallyExclusive);
-
-    auto command_topic_name = "/" + m_robot_name + "/cmd_vel";
-    auto pose_topic_name = "/" + m_robot_name + "/odom";
-    auto camera_topic_name = "/" + m_robot_name + "/camera_sensor/image_raw";
-    auto scan_topic_name = "/" + m_robot_name + "/scan";
-    auto image_topic_name = "/" + m_robot_name + "/processed_image";
-    auto goal_flag_topic_name = "/" + m_robot_name + "/goal_reached";
-
-    RCLCPP_INFO_STREAM(this->get_logger(), "Robot Constructor");
-
-    m_publisher_cmd_vel = this->create_publisher<geometry_msgs::msg::Twist>(
-        command_topic_name, 10);
-
-    m_goal_reached_publisher =
-        this->create_publisher<std_msgs::msg::Bool>(goal_flag_topic_name, 10);
-
-    m_image_publisher =
-        this->create_publisher<sensor_msgs::msg::Image>(image_topic_name, 10);
-
-
-    m_subscriber_robot3_pose =
-        this->create_subscription<nav_msgs::msg::Odometry>(
-            pose_topic_name, 10,
-            std::bind(&Robot::robot_pose_callback, this,
-                      std::placeholders::_1));
-
-
-    
-
-
-    // Set QoS profile
-    rclcpp::QoS qos_profile(10);
-    qos_profile.history(rclcpp::HistoryPolicy::KeepLast);
-    qos_profile.keep_last(10);
-    qos_profile.reliability(rclcpp::ReliabilityPolicy::BestEffort);
-    qos_profile.durability(rclcpp::DurabilityPolicy::SystemDefault);
-
-    m_scan_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-            scan_topic_name, qos_profile,
-            std::bind(&Robot::robot_scan_callback, this, std::placeholders::_1));
-
-    // Create a subscriber for camera messages
-    m_camera_subscriber_ = this->create_subscription<sensor_msgs::msg::Image>(
-                camera_topic_name, qos_profile,
-                std::bind(&Robot::robot_camera_callback, this, std::placeholders::_1));
-
-    // Call on_timer function 5 times per second
-    m_go_to_goal_timer = this->create_wall_timer(
-        std::chrono::milliseconds(static_cast<int>(1000.0 / 1)),
-        std::bind(&Robot::go_to_goal_callback, this), m_cbg);
-
-    // Call on_timer function 5 times per second
-    m_image_timer = this->create_wall_timer(
-        std::chrono::milliseconds(static_cast<int>(1000.0 / 1)),
-        std::bind(&Robot::image_pub_callback, this), m_cbg);
-
-  }
-
   /**
    * @brief Set the goal to reach.
    *
@@ -146,128 +93,196 @@ class Robot : public rclcpp::Node {
    * @param x x-coordinate of the goal position.
    * @param y y-coordinate of the goal position.
    */
-  void set_goal(double x, double y) {
-    m_go_to_goal = true;
-    m_goal_x = x;
-    m_goal_y = y;
-    // RCLCPP_INFO_STREAM(this->get_logger(), "Going to goal: [" << m_goal_x << ","
-    //                                                           << m_goal_y
-    //                                                           << "]");
-  }
-  /**
-   * @brief Stop the robot from moving
-   *
-   */
-  void stop();
+    void set_goal(double x, double y);
+  
+   /**
+    * @brief Stop command
+    * 
+    * Stops the robot by sending a zero velocity command
+    * Also makes the go_to_goal flag false
+    */
+    void stop();
 
-  void obstacle_avoid();
-
-  void resume();
+   /**
+    * @brief Method to avoid the obstacle
+    * 
+    * The robot avoids the obstacle by turning away from the obstacle and then moving away from it.
+    * The robot keeps on turning until it finds a clear path to move towards the goal.
+    */
+    void obstacle_avoid();
+    
+   /**
+    * @brief Method to resume the robot to move towards the goal
+    * 
+    * The robot resumes to move towards the goal by setting the go_to_goal flag to true
+    */
+    void resume();
+  
+  
   /**
-   * @brief Compute the distance between two points.
-   *
-   * @param a The first point.
-   * @param b The second point.
-   * @return double   The distance between a and b.
-   */
-  double compute_distance(const std::pair<double, double> &a,
+    * @brief Computes the Euclidian Distance
+    * 
+    * Given a pair of points, computes the distance between them
+    * @param a (x,y) coordinate of point a
+    * @param b (x,y) coordinate of point b
+    * @return double distance between the points
+    */
+    double compute_distance(const std::pair<double, double> &a,
                           const std::pair<double, double> &b);
 
-  /**
-   * @brief Callback function for the robot3 pose.
-   *
-   * @param msg Odometry message.
-   */
-  void robot_pose_callback(const nav_msgs::msg::Odometry &msg);
+   /**
+    * @brief Pose Callback method
+    * 
+    * Stores the current location and orientation of the robot
+    * in the global posiion variable of the robot
+    * @param msg Odometry message from the robot "/odom" topic
+    */
+    void robot_pose_callback(const nav_msgs::msg::Odometry &msg);
 
-    /**
+   /**
     * @brief Read the camera data from the robot and process it
+    * 
+    * The robot reads the camera data and processes it to detect the red color box
+    * It computes the angle and depth of the centroid of the box and the intensity of the box
+    * It also computes the x and y coordinates of the box and stores it in the objective_location variable
     * 
     * @param msg 
     */
-  void robot_camera_callback(const sensor_msgs::msg::Image &msg);
+    void robot_camera_callback(const sensor_msgs::msg::Image &msg);
 
   /**
-   * @brief Read scan data from the robot LiDAR
-   * 
-   * @param msg 
-   */
-  void robot_scan_callback(const sensor_msgs::msg::LaserScan &msg);
-    
+    * @brief Callback method for the LiDAR scan.
+    * 
+    * The robot checks for obstacles in the LiDAR scan and if an obstacle is detected,
+    * takes the necessary action to avoid the obstacle.
+    *
+    * @param msg 
+    */
+    void robot_scan_callback(const sensor_msgs::msg::LaserScan &msg);
 
   /**
-   * @brief Normalizes the angle to be 0 to 2*M_PI
-   *
-   * @param angle Angle to normalize (rad)
-   * @return double Normalized angle (rad)
-   */
-  double normalize_angle_positive(double angle);
+    * @brief Evaluates the Yaw from Quaternion
+    * 
+    * Converts the quaternion to RPY and returns the yaw
+    * The yaw is converted to the range [0, 2*PI]
+    *
+    * @return double Yaw in radians
+    */
+    double compute_yaw_from_quaternion();
 
   /**
-   * @brief Normalizes the angle to be -M_PI circle to +M_PI circle
-   *
-   * @param angle Angle to normalize (rad)
-   * @return double Normalized angle (rad)
-   */
-  double normalize_angle(double angle);
-
-  /**
-   * @brief Compute the yaw angle from quaternion pose
-   *
-   * @return double
-   */
-  double compute_yaw_from_quaternion();
-
-  /**
-   * @brief To move to robot by publish velocities on cmd_vel
+   * @brief To move to robot by publish velocities on "cmd_vel"
    *
    * @param linear linear velocity component
    * @param angular angular velocity component
    */
-  void move(double linear, double angular);
+    void move(double linear, double angular);
 
   /**
-   * @brief process to move the robot to a goal
-   *
-   */
-  void go_to_goal_callback();
+    * @brief Send robot to the alloted location
+    * 
+    * While the robot is not at the goal, it computes the distance and angle to the goal
+    * and moves the robot towards the goal using proportional control
+    * If the robot is within 0.75m of the goal, it stops the robot
+    */
+    void go_to_goal_callback();
 
   /**
-   * @brief Compute the intensity/brightness of the firefly based on the distance form human
-   * 
-   * @return double 
-   */
-  double get_intensity();
+ * @brief Getter for intensity
+ * 
+ * Returns the intensity of the robot limited to 1.0
+ * @return double 
+ */
+    double get_intensity();
 
-  double compute_angle(double x, double y);
+   /**
+    * @brief Compute the angle between the x axis of robot and the centroid of the object
+    * 
+    * Using the camera field of view and the image dimensions, the angle of the object 
+    * from the center of the image is computed.
+    *
+    * @param x x coordinate of the centroid of the object
+    * @return double Normalized angle (rad)
+    */
+    double compute_angle(double x);
 
-  double compute_depth(int range, double angle);
 
-  geometry_msgs::msg::Quaternion m_orientation;
+   /**
+    * @brief Compute the distance to the object
+    * 
+    * Using the angle to the centroid of object and the LiDAR data,
+    * the depth of the object is computed.
+    *
+    * @param range Range of angles to consider
+    * @param angle Angle to normalize (degrees)
+    * @return double Distance (meters)
+    */
+    double compute_depth(int range, double angle);
 
-  std::pair<double, double> m_location;
+    /**
+    * @brief Publishes the image message
+    * 
+    * Publishes the processed image message to the topic "processed_image".
+    * This is used to display the processed image in the GUI
+    */
+    void image_pub_callback();
 
-  void image_pub_callback();
+   /**
+    * @brief The robot checks for obstacles in the LiDAR scan in a particular direction
+    * 
+    * @param range 360 degree range scan from the LiDAR
+    * @param center Center point for the direction in the LiDAR scan
+    * @param distance Threshold distance to check for obstacle
+    * 
+    * @return bool  
+    */
 
-  bool if_reached_goal() { return !m_go_to_goal; }
+    bool check_obstacle(int range,int center,double distance);
 
-  std::string get_robot_name() { return m_robot_name; }
+   /**
+    * @brief Method to indiacte that the robot has found the solution
+    * 
+    * The robot completes the task by stopping the robot and setting the go_to_goal flag to false
+    * the robot also starts rotating to indicate that it has found the solution visually.
+    */
+    void complete();
 
-  bool check_obstacle(int range,int center,double distance);
+    /**
+     * @brief Set the intensity object
+     * 
+     * @param intensity 
+     */
+    void set_intensity(double intensity);
 
-  bool object_detected = false;
+    /**
+     * @brief Set the go to goal object
+     * 
+     * @param go_to_goal 
+     */
+    bool if_reached_goal();
 
-  std::pair<double, double> objective_location;
+    /**
+     * @brief Get the robot name object
+     * 
+     * @return std::string 
+     */
+    std::string get_robot_name();
 
-  void complete();
+    // Flags
 
-  bool reached_object = false;
+    bool object_detected = false; ///< Flag to indicate if the object is detected
 
-  bool reroute = false;
+    bool reached_object = false; ///< Flag to indicate if the robot has reached the object
 
-  void set_intensity(double intensity){
-    m_intensity = intensity;
-  };
+    bool reroute = false; ///< Flag to indicate if the robot has to reroute
+
+    
+
+    geometry_msgs::msg::Quaternion m_orientation; ///< Orientation of the robot
+
+    std::pair<double, double> m_location; ///< Location of the robot
+
+    std::pair<double, double> objective_location; ///< Location of the object
 
  private:
   // attributes
@@ -294,23 +309,23 @@ class Robot : public rclcpp::Node {
 
   rclcpp::CallbackGroup::SharedPtr m_cbg; 
 
-  rclcpp::TimerBase::SharedPtr m_timer;
+  rclcpp::TimerBase::SharedPtr m_timer; ///< Timer to trigger publishing.
 
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr m_publisher_cmd_vel;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr m_publisher_cmd_vel; ///< The publisher object for velocity.
 
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr m_goal_reached_publisher;
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr m_goal_reached_publisher;   ///< The publisher object for goal status.
 
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr m_subscriber_robot3_pose;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr m_subscriber_robot3_pose; ///< The subscriber object for robot pose.
   
-  rclcpp::TimerBase::SharedPtr m_go_to_goal_timer;
+  rclcpp::TimerBase::SharedPtr m_go_to_goal_timer; ///< Timer to trigger go to goal callback.
 
-  rclcpp::TimerBase::SharedPtr m_image_timer;
+  rclcpp::TimerBase::SharedPtr m_image_timer; ///< Timer to trigger image publishing callback.
 
-  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr m_camera_subscriber_;
+  rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr m_camera_subscriber_; ///< The subscriber object for camera data.
 
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr m_scan_subscriber_;
-  
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_image_publisher;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr m_scan_subscriber_; ///< The subscriber object for LiDAR data.
+
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_image_publisher; ///< The publisher object for processed image.
 
 
 };

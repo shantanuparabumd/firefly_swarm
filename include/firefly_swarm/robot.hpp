@@ -80,9 +80,6 @@ class Robot : public rclcpp::Node {
      * @param robot_name 
      * @param mloc_x 
      * @param mloc_y 
-     * @param go_to_goal 
-     * @param linear_speed 
-     * @param angular_speed 
      */
     Robot(std::string node_name, std::string robot_name,double mloc_x,double mloc_y );
     

@@ -1,7 +1,7 @@
 /******************************************************************************
  * MIT License
  *
- * Copyright (c) 2022 Jay Prajapati, Shail Shah and Shantanu Parab
+ * Copyright (c) 2024  Shantanu Parab
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@
  *
  */
 
-#include <string>
+#include <string> ///< Include string library
 
 #include "firefly_swarm/master.hpp"
 
@@ -48,115 +48,115 @@ using TWIST = geometry_msgs::msg::Twist;
 using ODOM = nav_msgs::msg::Odometry;
 using RCL_NODE_PTR = std::shared_ptr<rclcpp::Node>;
 
-/**
- * @brief Construct a new Master:: Master object
- * 
- * @param robot_array 
- * @param nodes 
- */
+
+//=====================================
 Master::Master(std::vector<std::shared_ptr<Robot>> const &robot_array,
                int nodes)
     : Node("master_node") {
+  
+  // Initialize the robot array and the number of nodes
   this->robot_array = robot_array;
   this->nodes = nodes;
+
+  // Variable to the bind the process_callback function
   auto processCallback = std::bind(&Master::process_callback, this);
+
+  // Create a timer to call the process_callback function every 1000ms
   this->timer_ = this->create_wall_timer(1000ms, processCallback);
-  // this->circle(radius);
   
 }
 
 
-// void Master::process_callback() {
-//   // RCLCPP_INFO_STREAM(this->get_logger(), "iterating Publisher array");
-//   if (this->generations < 100){
-//       if (this->check_all_robots_reached_goal()) {
-//         RCLCPP_INFO_STREAM(this->get_logger(), "All robots reached goal");
-//         this->circle(radius);
-//         this->generations++;
-//         radius = radius + 1.0;
-//         if (radius > 10.0){
-//           radius = 5.0;
-//         }
-//       }
-//   // RCLCPP_INFO_STREAM(this->get_logger(), "Current generation: " << this->generations);
-//   }
-//   else{
-//     RCLCPP_INFO_STREAM(this->get_logger(), "Algorithm reached max generations");
-//   }
-  
-  
-// }
 
-/**
- * @brief Process callback logger info
- * 
- */
+//=====================================
 void Master::process_callback() {
-  // RCLCPP_INFO_STREAM(this->get_logger(), "iterating Publisher array");
+
+  // Check if the generations are less than 100
   if (this->generations < 100){
-    // RCLCPP_INFO_STREAM(this->get_logger(), "Current generation: " << this->generations);
+      // Check if all robots have reached the goal
       if (this->check_all_robots_reached_goal()) {
+        // Log the information
         RCLCPP_INFO_STREAM(this->get_logger(), "All robots reached goal");
+        // Check if the robot is less than the number of nodes
         if(robot < this->nodes){
+          // Call the firefly_algorithm function
           this->firefly_algorithm(robot);
           robot++;
         }
         else{
+          // Reset the robot to 0
           robot = 0;
+          // Increment the generations
           this->generations++;
+          // Log the information
           RCLCPP_INFO_STREAM(this->get_logger(), "Update generation: " << this->generations);
         }
-
       }
-  
   }
   else{
     RCLCPP_INFO_STREAM(this->get_logger(), "Algorithm reached max generations");
   }
-  
-  
 }
 
 
+
+//=====================================
 bool Master::check_all_robots_reached_goal() {
   bool flag = true;
     for (const auto& robot : robot_array) {
       if (!robot->if_reached_goal()) {
         flag = false;
-        // RCLCPP_INFO_STREAM(this->get_logger(), "Robot "<<robot->get_robot_name()<<"reached goal Intensity: "<<robot->get_intensity());
+        break;
       }
     }
     return flag;
   }
 
 
+//=====================================
 void Master::circle(double radius) {
+
+  // Calculate the angle between the points
   double h = 2 * 3.142 / this->nodes;
+
+  // Initialize the id to 0
   int id = 0;
+  // Iterate through the number of nodes
   for (double i = 0.0; i < h * this->nodes; i += h) {
+    // Calculate the x and y coordinates from radius and angle
     double a = radius * cos(i);
     double b = radius * sin(i);
     if (i < 2 * 3.14) {
+      // Set the goal for the robot
       this->robot_array[id]->set_goal(a, b);
-      RCLCPP_INFO_STREAM(this->get_logger(),
-                         "robot_id " << id << " a " << a << " b " << b);
+      // Increment the id
       id += 1;
     }
   }
 }
 
 
+//=====================================
 void Master::firefly_algorithm(int j) {
+    // Iterate through the robot array
     if (j<this->nodes){
+      // Check if the all the robots have reached the goal
       if(check_all_robots_reached_goal()){
+        // Check if the robot has reached the goal
         if (robot_array[j]->reached_object){
+          // Stop the robot and complete the process
           robot_array[j]->stop();
           robot_array[j]->complete();
           robot_array[j]->reroute  = false;
           RCLCPP_INFO_STREAM(this->get_logger(),robot_array[j]->get_robot_name()<<" reached Object at " << robot_array[j]->objective_location.first <<","<<robot_array[j]->objective_location.second);
+          
+          // Call the firefly_inner function
+          firefly_inner(j);
+          j++;
         }
         else{
           RCLCPP_INFO_STREAM(this->get_logger(),robot_array[j]->get_robot_name()<<" has intensity "<< robot_array[j]->get_intensity());
+          // Call the firefly_inner function
           firefly_inner(j);
           j++;
         }
@@ -166,27 +166,39 @@ void Master::firefly_algorithm(int j) {
 }
 
 
-
+//=====================================
 void Master::firefly_inner(int j){
+  // Log the information of the current robot
+  RCLCPP_INFO_STREAM(this->get_logger(),"#####"<<robot_array[j]->get_robot_name()<<"Intensity: "<<robot_array[j]->get_intensity()<<"############");
+  // Iterate through the all other robots in the  array
   for (int i = 0;i<this->nodes;i++){
+          // Check if any robot has reached the goal  
           if (i!=j && !robot_array[i]->reached_object){
-            if(robot_array[i]->object_detected){
+            // If the robot has not reached the goal, check the following conditions
 
+            // Check if the robot has detected an object
+            if(robot_array[i]->object_detected){
+              
+              // Get the location of the object the robot has detected
               std::pair<double,double> objective_location = robot_array[i]->objective_location;
-              // Calculate the direction towards the objective location
+              
+              // Calculate the direction towards the object location
               double direction_x = objective_location.first - this->robot_array[i]->m_location.first;
               double direction_y = objective_location.second - this->robot_array[i]->m_location.second;
               double magnitude = sqrt(direction_x * direction_x + direction_y * direction_y);
 
-              if (magnitude < 0.75){
-                RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_robot_name()<<" reached Object at " << objective_location.first <<","<<objective_location.second);
+              // Check if the distance to the object is less than 0.5
+              if (magnitude < 0.5){
+                // If the distance is less than 0.5, stop the robot and complete the process
+                RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_robot_name()<<":Object at" << objective_location.first <<","<<objective_location.second);
                 this->robot_array[i]->stop();
                 robot_array[i]->complete();
                 robot_array[i]->reached_object = true;
               }
+              // If the distance is greater than 0.5, move the robot towards the object
               else{
-                // Define the range for the random step
-                double step_size = 2.0; // Adjust as needed
+                // Define the range for the  step
+                double step_size = 2.0;
 
                 // Normalize the direction vector
                 direction_x /= magnitude;
@@ -199,26 +211,45 @@ void Master::firefly_inner(int j){
                 // Set the new goal position
                 this->robot_array[i]->set_goal(x, y);
                 
-              
-
-                RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_robot_name()<<" moving towards object " << x <<","<<y);
-                // RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_robot_name()<<" detected Object at " << objective_location.first <<","<<objective_location.second);
+                // Log the information
+                RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_robot_name()<<" moving towards object " << x <<","<<y<<":Object at" << objective_location.first <<","<<objective_location.second);
               }
             }
-
+          // If the robot did not detect an object
+          // Check if the intensity of the current robot is greater than the  robot
           else if (this->robot_array[i]->get_intensity()<this->robot_array[j]->get_intensity()){
-            double beta = 2.0;
-            double gamma = 0.1;
+            // Set the attractiveness of the robot based on the intensity
+            double beta = 1.0 * robot_array[j]->get_intensity();
+            // Set the gamma value (absorption coefficient)
+            double gamma = 0.02;
+            // Calculate the distance between the robots
             double distance = this->robot_array[i]->compute_distance(this->robot_array[i]->m_location,this->robot_array[j]->m_location);
+
+            // Calculate the new goal position based on the distance and attractiveness
             double x = this->robot_array[i]->m_location.first + beta*exp(-gamma*pow(distance,2))*(this->robot_array[j]->m_location.first - this->robot_array[i]->m_location.first);
             double y = this->robot_array[i]->m_location.second + beta*exp(-gamma*pow(distance,2))*(this->robot_array[j]->m_location.second - this->robot_array[i]->m_location.second);
+            
+            // Set the new goal position
             this->robot_array[i]->set_goal(x,y);
-            RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_robot_name()<<" moving towards "<<robot_array[j]->get_robot_name());
-            // RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_intensity()<<" moving towards "<<robot_array[j]->get_intensity());
+
+
+            // Calculate the attraction between the robots in terms of distance it is moving.
+            double attract = this->robot_array[i]->compute_distance(this->robot_array[i]->m_location,std::make_pair(x,y));
+
+
+            // Log the information
+            RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_robot_name()<<"("<<robot_array[i]->get_intensity()<<
+            ") moving towards "<<robot_array[j]->get_robot_name()<<" ("<<robot_array[j]->get_intensity()<<") Attraction: "<<attract);
+            
+            RCLCPP_INFO_STREAM(this->get_logger(),"Distance: "<<distance<<" Location: "<<robot_array[i]->m_location.first
+            <<","<<robot_array[i]->m_location.second<<" New Goal: "<<x<<","<<y);
+
           }
+          // If no object is detected and the intensity of the current robot is less than the robot
+          // Then move the robot randomly to explore the environment
           else{
             // Define the range for the random step
-            double step_size = 3.0; // Adjust as needed
+            double step_size = 1.0; 
 
             // Generate random offsets for x and y coordinates
             double random_x_offset = (2.0 * (double)rand() / RAND_MAX - 1.0) * step_size;
@@ -234,7 +265,7 @@ void Master::firefly_inner(int j){
           }
           }
           else{
-            RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_robot_name()<<" reached Object at " << robot_array[i]->objective_location.first <<","<<robot_array[i]->objective_location.second);
+            RCLCPP_INFO_STREAM(this->get_logger(),robot_array[i]->get_robot_name()<<"("<<robot_array[i]->get_intensity()<<") is not moving");
           }
         }
 }

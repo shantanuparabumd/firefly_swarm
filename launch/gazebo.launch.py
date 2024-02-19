@@ -86,7 +86,7 @@ def generate_launch_description():
     ld = LaunchDescription()
     
     n= count
-    side_length = 10
+    side_length = 20
     # Calculate the number of points per side in a grid
     points_per_side = int(np.ceil(np.sqrt(n)))
     # Calculate the spacing between points

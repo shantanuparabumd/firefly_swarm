@@ -1,7 +1,7 @@
 /******************************************************************************
  * MIT License
  *
- * Copyright (c) 2022 Jay Prajapati, Shail Shah and Shantanu Parab
+ * Copyright (c) 2024 Shantanu Parab
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,19 +36,30 @@
 #ifndef INCLUDE_FIREFLY_SWARM_ROBOT_HPP_
 #define INCLUDE_FIREFLY_SWARM_ROBOT_HPP_
 
-#include <geometry_msgs/msg/quaternion.hpp>
-#include <geometry_msgs/msg/twist.hpp>
-#include <nav_msgs/msg/odometry.hpp>
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/bool.hpp>
-#include <string>
-#include <utility>
-#include <sensor_msgs/msg/image.hpp>
-#include <sensor_msgs/msg/laser_scan.hpp>
-#include "cv_bridge/cv_bridge.h"
-#include <opencv2/highgui.hpp>
+#include <geometry_msgs/msg/quaternion.hpp> // Included for Quaternion message
+#include <geometry_msgs/msg/twist.hpp> // Included for Twist message
+#include <nav_msgs/msg/odometry.hpp> // Included for Odometry message
+#include <rclcpp/rclcpp.hpp> // Include the ROS2 C++ library 
+#include <std_msgs/msg/bool.hpp> // Included for Bool message
+#include <string> // Included for string
+#include <utility> // Included for pair
+#include <sensor_msgs/msg/image.hpp> // Included for Image message
+#include <sensor_msgs/msg/laser_scan.hpp> // Included for LaserScan message
+#include "cv_bridge/cv_bridge.h" // Included for cv_bridge (OPENCV TO ROS)
+#include <opencv2/highgui.hpp> // Included for highgui  (OPENCV)
 
 
+
+/**
+ * @class Robot
+ * @brief Robot class to control individual robots
+ * 
+ * Robot is a class derived from rclcpp::Node designed to  control the individual robots. 
+ * It has callback functions for the robot pose, camera and LiDAR data. It also has a timer to call the 
+ * callback function at a fixed interval to publish processed images.
+ * It publsihes the velocity commands to "cmd_vel" topic and the processed image to "processed_image" topic.
+ * 
+ */
 class Robot : public rclcpp::Node {
  public:
   Robot(std::string node_name, std::string robot_name,double mloc_x,double mloc_y ,bool go_to_goal = false,
@@ -254,41 +265,51 @@ class Robot : public rclcpp::Node {
 
   bool reroute = false;
 
+  void set_intensity(double intensity){
+    m_intensity = intensity;
+  };
+
  private:
   // attributes
-  std::string m_robot_name;  // robot name used for creating namespace
-  bool m_go_to_goal;         // flag to store if the robot has reached position
+  std::string m_robot_name;  //< robot name used for creating namespace
+  bool m_go_to_goal;         //< flag to store if the robot has reached position
   
-  double m_linear_speed;     // base linear velocity of robot
-  double m_angular_speed;    // base angular velocity of robot
-  double m_roll;             // rad
-  double m_pitch;            // rad
-  double m_yaw;              // rad
-  double m_kv;               // gain for linear velocity
-  double m_kh;               // gain for angular velocity
-  double m_goal_x;
-  double m_goal_y;
-  double m_distance_to_goal;
-  double m_intensity;
-  std::vector<float> m_ranges_;
-  sensor_msgs::msg::Image m_processed_image_msg;
+  double m_linear_speed;     //< base linear velocity of robot
+  double m_angular_speed;    //< base angular velocity of robot
+  double m_roll;             //< rad
+  double m_pitch;            //< rad
+  double m_yaw;              //< rad
+  double m_kv;               //< gain for linear velocity
+  double m_kh;               //< gain for angular velocity
+  double m_goal_x;           //< x-coordinate of the goal position    
+  double m_goal_y;           //< y-coordinate of the goal position
+  double m_distance_to_goal; //< distance to goal
+  double m_intensity;        //< intensity of the firefly
+  std::vector<float> m_ranges_; //< range data from LiDAR
+  sensor_msgs::msg::Image m_processed_image_msg; //< processed image message
 
   
-  int reroute_count = 0;
+  int reroute_count = 0; //< reroute count
 
 
-  rclcpp::CallbackGroup::SharedPtr m_cbg;
+  rclcpp::CallbackGroup::SharedPtr m_cbg; 
+
   rclcpp::TimerBase::SharedPtr m_timer;
+
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr m_publisher_cmd_vel;
+
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr m_goal_reached_publisher;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr
-      m_subscriber_robot3_pose;
+
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr m_subscriber_robot3_pose;
   
-  //   geometry_msgs::msg::Quaternion m_orientation;
   rclcpp::TimerBase::SharedPtr m_go_to_goal_timer;
+
   rclcpp::TimerBase::SharedPtr m_image_timer;
+
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr m_camera_subscriber_;
+
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr m_scan_subscriber_;
+  
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr m_image_publisher;
 
 

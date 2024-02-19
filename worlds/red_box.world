@@ -197,7 +197,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>9.49896 -9.44508 0 0 -0 0</pose>
+      <pose>8.49896 -8.44508 0 0 -0 0</pose>
     </model>
     <model name='red_box_3'>
       <static>1</static>
@@ -227,7 +227,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
-      <pose>0.536916 -9.47741 0 0 -0 0</pose>
+      <pose>0.536916 -8.47741 0 0 -0 0</pose>
     </model>
     <state world_name='default'>
       <sim_time>1592 995000000</sim_time>
@@ -275,20 +275,20 @@
         </link>
       </model>
       <model name='red_box_2'>
-        <pose>9.49896 -9.44508 0 0 -0 0</pose>
+        <pose>8.49896 -8.44508 0 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>9.49896 -9.44508 0 0 -0 0</pose>
+          <pose>8.49896 -8.44508 0 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
       <model name='red_box_3'>
-        <pose>0.536916 -9.47741 0 0 -0 0</pose>
+        <pose>0.536916 -8.47741 0 0 -0 0</pose>
         <scale>1 1 1</scale>
         <link name='link'>
-          <pose>0.536916 -9.47741 0 0 -0 0</pose>
+          <pose>0.536916 -8.47741 0 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>

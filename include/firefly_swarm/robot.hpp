@@ -83,7 +83,7 @@ class Robot : public rclcpp::Node {
      * @param mloc_x 
      * @param mloc_y 
      */
-    Robot(std::string node_name, std::string robot_name, double mloc_x, double mloc_y);
+    Robot(std::string robot_name, std::string node_name, double mloc_x, double mloc_y);
 
     /**
     * @brief Set the goal to reach.
@@ -267,6 +267,23 @@ class Robot : public rclcpp::Node {
      */
     std::string get_robot_name();
 
+    /**
+     * @brief Get the location robot
+     * 
+     * @return std::pair<double, double> 
+     */
+    std::pair<double, double> get_pose();
+
+    /**
+     * @brief Set the location robot
+     * 
+     * @param x 
+     * @param y 
+     */
+    void set_location(double x, double y);
+
+
+
     // Flags
 
     bool object_detected = false;  ///< Flag to indicate if the object is detected
@@ -279,13 +296,16 @@ class Robot : public rclcpp::Node {
 
     geometry_msgs::msg::Quaternion m_orientation;  ///< Orientation of the robot
 
-    std::pair<double, double> m_location;  ///< Location of the robot
+    
 
     std::pair<double, double> objective_location;  ///< Location of the object
 
  private:
   // attributes
   std::string m_robot_name;  //< robot name used for creating namespace
+
+  std::pair<double, double> m_location;  ///< Location of the robot
+
   bool m_go_to_goal;         //< flag to store if the robot has reached position
 
   double m_linear_speed;     //< base linear velocity of robot

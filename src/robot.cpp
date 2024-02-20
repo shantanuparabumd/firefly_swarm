@@ -35,11 +35,18 @@
 #include "firefly_swarm/robot.hpp"   ///< Include the robot header file
 
 
+void Robot::set_location(double x, double y) {
+  m_location.first = x;
+  m_location.second = y;
+}
+
+std::pair<double, double> Robot::get_pose(){
+  return m_location;
+}
 
 //=====================================
 void Robot::robot_pose_callback(const nav_msgs::msg::Odometry &msg) {
-  m_location.first = msg.pose.pose.position.x;
-  m_location.second = msg.pose.pose.position.y;
+  set_location(msg.pose.pose.position.x, msg.pose.pose.position.y);
   m_orientation = msg.pose.pose.orientation;
 }
 
@@ -103,9 +110,8 @@ void Robot::go_to_goal_callback() {
   // Store the goal location in a pair
   std::pair<double, double> goal{m_goal_x, m_goal_y};
 
-  // Compute the distance to the goal
-  double distance_to_goal = compute_distance(m_location, goal);
-
+  
+  
   // Check if the robot has rerouted more than 10 times
   if (reroute_count > 10) {
     // Set the reroute_count to 0 and stop the robot
@@ -115,10 +121,16 @@ void Robot::go_to_goal_callback() {
     stop();
   }
 
+  // Get the pose of the robot
+  m_location = get_pose();
+
+  // Compute the distance to the goal
+  double distance_to_goal = compute_distance(m_location, goal);
+
   // Check if the robot is not within 0.75m of the goal
   if (distance_to_goal > 0.75) {
-    // Compute the distance and angle to the goal
-    distance_to_goal = compute_distance(m_location, goal);
+
+    // Compute the  angle to the goal
     double angle_to_goal = std::atan2(m_goal_y - m_location.second, m_goal_x - m_location.first);
 
     // Compute the difference between the current orientation and the angle to the goal
@@ -252,6 +264,8 @@ void Robot::robot_camera_callback(const sensor_msgs::msg::Image &msg) {
 
       // Compensate for the current orientation of the robot
       double compensated_angle = angle*M_PI/180 + compute_yaw_from_quaternion();
+
+      m_location = get_pose();
 
       // Calculate the x and y coordinates of the object
       double object_x = m_location.first + depth * cos(compensated_angle);
@@ -390,6 +404,10 @@ void Robot::robot_scan_callback(const sensor_msgs::msg::LaserScan &msg)
 
 //=====================================
 void Robot::obstacle_avoid() {
+
+  // Get the pose of the robot
+  m_location = get_pose();
+
   // Make the go_to_goal flag false. Stop the robot from moving towards the goal
   m_go_to_goal = false;
 
@@ -463,7 +481,7 @@ void Robot::set_goal(double x, double y) {
     }
 
 //=====================================
-Robot::Robot(std::string node_name, std::string robot_name, double mloc_x, double mloc_y)
+Robot::Robot(std::string robot_name, std::string node_name, double mloc_x, double mloc_y)
       : Node(node_name),
         m_robot_name{robot_name},  /// Initialize the robot name
         m_location{std::make_pair(mloc_x, mloc_y)},  /// Initialize the robot location

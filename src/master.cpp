@@ -177,6 +177,10 @@ void Master::firefly_inner(int j) {
     << "Intensity: "<< robot_array[j]->get_intensity()<< "############");
   // Iterate through the all other robots in the  array
   for (int i = 0 ; i< this->nodes ; i++) {
+
+      // Get robot i location
+      std::pair<double, double> robot_i_location = robot_array[i]->get_pose();
+      
           // Check if any robot has reached the goal
           if (i!= j && !robot_array[i]->reached_object) {
             // If the robot has not reached the goal, check the following conditions
@@ -186,9 +190,11 @@ void Master::firefly_inner(int j) {
               // Get the location of the object the robot has detected
               std::pair<double, double> objective_location = robot_array[i]->objective_location;
 
+              
+
               // Calculate the direction towards the object location
-              double direction_x = objective_location.first - this->robot_array[i]->m_location.first;
-              double direction_y = objective_location.second - this->robot_array[i]->m_location.second;
+              double direction_x = objective_location.first - robot_i_location.first;
+              double direction_y = objective_location.second - robot_i_location.second;
               double magnitude = sqrt(direction_x * direction_x + direction_y * direction_y);
 
               // Check if the distance to the object is less than 0.5
@@ -208,8 +214,8 @@ void Master::firefly_inner(int j) {
                 direction_y /= magnitude;
 
                 // Calculate the new goal position by adding the direction vector with the step size
-                double x = this->robot_array[i]->m_location.first + direction_x * step_size;
-                double y = this->robot_array[i]->m_location.second + direction_y * step_size;
+                double x = robot_i_location.first + direction_x * step_size;
+                double y = robot_i_location.second + direction_y * step_size;
 
                 // Set the new goal position
                 this->robot_array[i]->set_goal(x, y);
@@ -222,24 +228,28 @@ void Master::firefly_inner(int j) {
               // If the robot did not detect an object
           // Check if the intensity of the current robot is greater than the  robot
             } else if (this->robot_array[i]->get_intensity()< this->robot_array[j]->get_intensity()) {
+
+            // Get robot j location
+            std::pair<double, double> robot_j_location = robot_array[j]->get_pose();
+
             // Set the attractiveness of the robot based on the intensity
             double beta = 1.0 * robot_array[j]->get_intensity();
             // Set the gamma value (absorption coefficient)
             double gamma = 0.02;
             // Calculate the distance between the robots
-            double distance = robot_array[i]->compute_distance(robot_array[i]->m_location, robot_array[j]->m_location);
+            double distance = robot_array[i]->compute_distance(robot_i_location, robot_j_location);
 
             // Calculate the new goal position based on the distance and attractiveness
-            double x = robot_array[i]->m_location.first +
-              beta*exp(-gamma*pow(distance, 2))*(robot_array[j]->m_location.first - robot_array[i]->m_location.first);
-            double y = robot_array[i]->m_location.second +
-              beta*exp(-gamma*pow(distance, 2))*(robot_array[j]->m_location.second - robot_array[i]->m_location.second);
+            double x = robot_i_location.first +
+              beta*exp(-gamma*pow(distance, 2))*(robot_j_location.first - robot_i_location.first);
+            double y = robot_i_location.second +
+              beta*exp(-gamma*pow(distance, 2))*(robot_j_location.second - robot_i_location.second);
 
             // Set the new goal position
             robot_array[i]->set_goal(x, y);
 
             // Calculate the attraction between the robots in terms of distance it is moving.
-            double attract = robot_array[i]->compute_distance(robot_array[i]->m_location, std::make_pair(x, y));
+            double attract = robot_array[i]->compute_distance(robot_i_location, std::make_pair(x, y));
 
 
             // Log the information
@@ -248,7 +258,7 @@ void Master::firefly_inner(int j) {
             " ("<< robot_array[j]->get_intensity()<< ") Attraction: "<< attract);
 
             RCLCPP_INFO_STREAM(this->get_logger(), "Distance: "<< distance<< " Location: "
-            << robot_array[i]->m_location.first << ","<< robot_array[i]->m_location.second
+            << robot_i_location.first << ","<< robot_i_location.second
             << " New Goal: "<< x<< ","<< y);
 
           // If no object is detected and the intensity of the current robot is less than the robot
@@ -262,8 +272,8 @@ void Master::firefly_inner(int j) {
             double random_y_offset = (2.0 * static_cast<double>(rand()) / RAND_MAX - 1.0) * step_size;
 
             // Calculate the new goal position by adding random offsets
-            double x = this->robot_array[i]->m_location.first + random_x_offset;
-            double y = this->robot_array[i]->m_location.second + random_y_offset;
+            double x = robot_i_location.first + random_x_offset;
+            double y = robot_i_location.second + random_y_offset;
 
             // Set the new goal position
             this->robot_array[i]->set_goal(x, y);

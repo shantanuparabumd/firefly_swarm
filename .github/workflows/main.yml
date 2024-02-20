@@ -56,9 +56,7 @@ jobs:
           cd ros_ws
           rosdep install --from-paths src -y --ignore-src
           colcon build --cmake-args -DCOVERAGE=1 --packages-select firefly_swarm
-          cat log/latest_build/firefly_swarm/stdout_stderr.log
-          find build/firefly_swarm/ | grep -E 'gcno' # catch error -- exepct to see .gcno files
-    
+
 
       # - name: Run unit test and check code error
       #   run: |
